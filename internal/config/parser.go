@@ -1,10 +1,12 @@
-package records
+package config
 
 import (
 	"bufio"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/Cycloctane/dnspass/internal/records"
 )
 
 func ParseFile(file string) error {
@@ -27,7 +29,7 @@ func ParseFile(file string) error {
 			continue
 		}
 		log.Printf("Adding record: %s -> %s\n", split[0], split[1])
-		Add(split[0], split[1])
+		records.Add(split[0], split[1])
 	}
 	return nil
 }

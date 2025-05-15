@@ -1,4 +1,4 @@
-package nameserver
+package dnsserver
 
 import (
 	"net"

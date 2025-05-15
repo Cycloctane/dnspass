@@ -9,9 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Cycloctane/dnspass/internal/nameserver"
+	"github.com/Cycloctane/dnspass/internal/config"
+	dnsserver "github.com/Cycloctane/dnspass/internal/dnsserver"
 	"github.com/Cycloctane/dnspass/internal/proxy"
-	"github.com/Cycloctane/dnspass/internal/records"
 	"github.com/miekg/dns"
 )
 
@@ -27,12 +27,12 @@ var (
 func init() {
 	flag.Parse()
 	if _, _, err := net.SplitHostPort(*upstreamDNS); err != nil {
-		nameserver.UpstreamDNS = net.JoinHostPort(*upstreamDNS, "53")
+		dnsserver.UpstreamDNS = net.JoinHostPort(*upstreamDNS, "53")
 	} else {
-		nameserver.UpstreamDNS = *upstreamDNS
+		dnsserver.UpstreamDNS = *upstreamDNS
 	}
 	if *nameFile != "" {
-		if err := records.ParseFile(*nameFile); err != nil {
+		if err := config.ParseFile(*nameFile); err != nil {
 			log.Fatalf("Failed to parse records file: %v\n", err)
 		}
 	}
@@ -52,7 +52,7 @@ func main() {
 
 	var dnsServer *dns.Server
 	if *dnsListenAddr != "" {
-		dnsServer = nameserver.NewDNSServer()
+		dnsServer = dnsserver.NewDNSServer()
 		dnsServer.Net = "udp"
 		dnsServer.Addr = *dnsListenAddr
 		go func() {
