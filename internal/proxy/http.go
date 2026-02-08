@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -11,32 +12,38 @@ import (
 	"github.com/miekg/dns"
 )
 
-func dial(network, addr string) (net.Conn, error) {
+func dial(blockDirectIP bool, network, addr string) (net.Conn, error) {
 	hostname, port, _ := net.SplitHostPort(addr)
 	if net.ParseIP(hostname) != nil {
+		if blockDirectIP {
+			log.Printf("[proxy] Blocked direct IP connection to %s", hostname)
+			return nil, errors.New("No route to host")
+		}
 		log.Printf("[proxy] Passing through IP address %s", hostname)
 		return net.Dial(network, addr)
 	}
 
 	hostname = dns.Fqdn(hostname)
-	if newAddr := records.Lookup1(hostname, "AAAA"); newAddr != "" {
-		log.Printf("[proxy] Resolved %s to %s", hostname, newAddr)
-		return net.Dial(network, net.JoinHostPort(newAddr, port))
-	} else if newAddr := records.Lookup1(hostname, "A"); newAddr != "" {
-		log.Printf("[proxy] Resolved %s to %s", hostname, newAddr)
-		return net.Dial(network, net.JoinHostPort(newAddr, port))
+	if rec, ok := records.Lookup1(hostname, records.TypeAAAA); ok {
+		log.Printf("[proxy] Resolved %s to %s", hostname, rec.Value)
+		return net.Dial(network, net.JoinHostPort(rec.Value, port))
+	} else if rec, ok := records.Lookup1(hostname, records.TypeA); ok {
+		log.Printf("[proxy] Resolved %s to %s", hostname, rec.Value)
+		return net.Dial(network, net.JoinHostPort(rec.Value, port))
 	} else {
 		log.Printf("[proxy] Failed to find %s", hostname)
 		return net.Dial(network, addr)
 	}
 }
 
-func NewHTTPProxyServer() *http.Server {
+func NewHTTPProxyServer(blockDirectIP bool) *http.Server {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Tr.DialContext = func(_ context.Context, network, addr string) (net.Conn, error) {
-		return dial(network, addr)
+		return dial(blockDirectIP, network, addr)
 	}
-	proxy.ConnectDial = dial
+	proxy.ConnectDial = func(network, addr string) (net.Conn, error) {
+		return dial(blockDirectIP, network, addr)
+	}
 	// proxy.Verbose = true
 
 	return &http.Server{Handler: proxy}

@@ -1,8 +1,9 @@
 module github.com/Cycloctane/dnspass
 
-go 1.23
+go 1.24
 
 require (
+	github.com/BurntSushi/toml v1.4.0
 	github.com/elazarl/goproxy v1.7.2
 	github.com/miekg/dns v1.1.63
 )

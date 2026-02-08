@@ -1,0 +1,23 @@
+[server]
+dns_listen = "127.0.0.1:8053"
+# dns_protocol = "tcp+udp"
+proxy_listen = "127.0.0.1:3128"
+web_listen = "127.0.0.1:8080"
+# web_username = "dnspass"
+# web_password = "changeme"
+proxy_block_ip_connections = false
+
+[dns]
+upstream = ["1.1.1.1", "8.8.8.8"]
+
+# [[records]]
+# name = "example.com"
+# type = "A"
+# value = "127.0.0.1"
+# ttl = 300
+
+# [[records]]
+# name = "example.com"
+# type = "AAAA"
+# value = "::1"
+# ttl = 300

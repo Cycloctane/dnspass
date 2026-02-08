@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>DNSPass Web UI</title>
+  <style>
+    main {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 2fr 80px 3fr 80px 80px;
+      gap: 6px;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid lightgray;
+    }
+
+    .row.head {
+      border-bottom: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <header>
+      <h1>DNS Records</h1>
+      <div>
+        <button id="add">Add</button>
+        <button id="save">Save</button>
+      </div>
+    </header>
+    <section>
+      <div class="row head">
+        <div>Name</div>
+        <div>Type</div>
+        <div>Value</div>
+        <div>TTL</div>
+        <div></div>
+      </div>
+      <div id="rows"></div>
+    </section>
+  </main>
+
+  <template id="row">
+    <div class="row">
+      <input class="name" placeholder="example.com" />
+      <select class="type">
+        <option>A</option>
+        <option>AAAA</option>
+        <option>PTR</option>
+        <option>TXT</option>
+      </select>
+      <input class="value" placeholder="127.0.0.1" />
+      <input class="ttl" placeholder="300" />
+      <button class="delete">Delete</button>
+    </div>
+  </template>
+
+  <script>
+    const rows = document.getElementById('rows');
+    const rowTemplate = document.getElementById('row');
+    const addBtn = document.getElementById('add');
+    const saveBtn = document.getElementById('save');
+
+    async function load() {
+      const res = await fetch('/api/records');
+      const data = await res.json();
+      rows.innerHTML = '';
+      data.forEach(addRow);
+    }
+
+    function addRow(item = {}) {
+      const node = rowTemplate.content.cloneNode(true);
+      const row = node.querySelector('.row');
+      const name = row.querySelector('.name');
+      const type = row.querySelector('.type');
+      const value = row.querySelector('.value');
+      const ttl = row.querySelector('.ttl');
+      const del = row.querySelector('.delete');
+
+      name.value = item.name || '';
+      type.value = item.type || 'A';
+      value.value = item.value || '';
+      ttl.value = item.ttl || '';
+
+      del.addEventListener('click', () => row.remove());
+      rows.appendChild(node);
+    }
+
+    function collect() {
+      const list = [];
+      rows.querySelectorAll('.row').forEach((row) => {
+        const name = row.querySelector('.name').value.trim();
+        const type = row.querySelector('.type').value.trim();
+        const value = row.querySelector('.value').value.trim();
+        const ttlRaw = row.querySelector('.ttl').value.trim();
+        if (!name || !type || !value) return;
+        const ttl = ttlRaw ? Number(ttlRaw) : 0;
+        list.push({ name, type, value, ttl });
+      });
+      return list;
+    }
+
+    addBtn.addEventListener('click', () => addRow());
+
+    saveBtn.addEventListener('click', async () => {
+      const payload = collect();
+      await fetch('/api/records', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      alert('Saved');
+    });
+
+    load();
+  </script>
+</body>
+
+</html>

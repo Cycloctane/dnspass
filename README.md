@@ -1,18 +1,26 @@
 DNSPass
-===
+=======
 
-Simple DNS and HTTP proxy. Custom DNS resolving for debugging without messing up /etc/hosts everytime.
+Simple DNS Server and HTTP proxy with configurable DNS records in webui.
+
+Currentyly supported record types: A, AAAA, PTR, TXT
 
 ## Usage
 
-Write custom hostname/address pairs to txt.
-
-```
-example.com/172.17.0.2
-...
-```
+Use `-example` flag to generate a config file template (See [dnspass.example.toml](cmd/dnspass/dnspass.example.toml)):
 
 ```bash
-./dnspass -c resolves.txt -l 127.0.0.1:3128 --dns 127.0.0.1:8053 &
-http_proxy=http://127.0.0.1:3128 curl -v -I http://example.com:8000
+./dnspass -example > dnspass.toml
+```
+
+Start the server with config file:
+
+```bash
+./dnspass -c dnspass.toml
+```
+
+Config DNS records in the webui (default http://localhost:8080) to customize DNS resolving for DNS server and HTTP proxy (CONNECT hostname).
+
+```bash
+http_proxy=http://127.0.0.1:3128 curl -v -I http://example.com:8000/
 ```
